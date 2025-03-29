@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Workout Tracker</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --background-color: #ecf0f1;
+            --card-background: #ffffff;
+            --text-color: #2c3e50;
+            --border-radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            text-align: center;
+            padding: 15px 0;
+            color: var(--secondary-color);
+            font-size: 24px;
+        }
+
+        .workout-form {
+            background-color: var(--card-background);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        select, input, button {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 10px;
+            -webkit-appearance: none;
+            background-color: white;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23333'%3E%3Cpath d='M6 9L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 30px;
+        }
+
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .exercise-row {
+            background-color: var(--card-background);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: var(--border-radius);
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .set-entry {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 5px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .sets-container {
+            display: grid;
+            gap: 10px;
+        }
+
+        .history-section {
+            background-color: var(--card-background);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .history-workout {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .remove-btn {
+            background-color: #e74c3c;
+        }
+
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .save-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .time-entry {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .exercise-row {
+                grid-template-columns: 1fr auto auto auto;
+                gap: 15px;
+                align-items: center;
+            }
+
+            .set-entry {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .time-entry {
+                flex-direction: row;
+            }
+
+            select, input {
+                width: auto;
+                min-width: 120px;
+            }
+
+            .save-btn {
+                width: auto;
+                min-width: 200px;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Workout Tracker</h1>
+        
+        <div class="workout-form">
+            <h2>New Workout</h2>
+            <div class="form-group">
+                <label for="workout-date">Date:</label>
+                <input type="date" id="workout-date">
+            </div>
+            <div class="form-group">
+                <label for="workout-type">Workout Type:</label>
+                <select id="workout-type">
+                    <option value="">Select Workout Type</option>
+                    <option value="chest_triceps">Chest and Triceps</option>
+                    <option value="legs">Legs</option>
+                    <option value="back_biceps">Back and Biceps</option>
+                    <option value="cardio">Cardio</option>
+                    <option value="flexibility">Flexibility</option>
+                </select>
+            </div>
+
+            <div id="exercises-container"></div>
+            <button class="save-btn" id="save-workout-btn">Save Workout</button>
+        </div>
+
+        <div class="history-section">
+            <h2>Recent History</h2>
+            <div id="workout-history"></div>
+        </div>
+    </div>
+
+    <script>
+        const workoutExercises = {
+            chest_triceps: ['Pectoral Fly', 'Chest Press', 'Triceps Extension', 'Skull Crushers'],
+            legs: ['Leg Press', 'Lunges', 'Leg Curls', 'Calf Raise', 'Deadlift'],
+            back_biceps: ['Lat Pull Down', 'Cable Row', 'Pull Ups', 'Preacher Curl', 'Hammer Curl'],
+            cardio: ['Running', 'Swimming', 'Dancing', 'Cycling'],
+            flexibility: ['Stretching', 'Yoga']
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('workout-date').valueAsDate = new Date();
+
+            document.getElementById('workout-type').addEventListener('change', function() {
+                displayExercises();
+                displayWorkoutHistory(this.value);
+            });
+
+            document.getElementById('save-workout-btn').addEventListener('click', saveWorkout);
+        });
+
+        function displayExercises() {
+            const workoutType = document.getElementById('workout-type').value;
+            const container = document.getElementById('exercises-container');
+            container.innerHTML = '';
+
+            if (!workoutType) return;
+
+            const exercises = workoutExercises[workoutType];
+            const isCardioOrFlex = workoutType === 'cardio' || workoutType === 'flexibility';
+
+            exercises.forEach(exercise => {
+                const exerciseDiv = document.createElement('div');
+                exerciseDiv.className = 'exercise-row';
+
+                if (isCardioOrFlex) {
+                    exerciseDiv.innerHTML = `
+                        <div>${exercise}</div>
+                        <div></div>
+                        <div class="time-entry">
+                            <input type="number" min="1" placeholder="Duration" style="width: 100%">
+                            <select>
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                            </select>
+                        </div>
+                        <button class="remove-btn" type="button">Remove</button>
+                    `;
+                } else {
+                    exerciseDiv.innerHTML = `
+                        <div>${exercise}</div>
+                        <select class="sets-select">
+                            <option value="">Select Sets</option>
+                            ${Array.from({length: 10}, (_, i) => `<option value="${i+1}">${i+1} sets</option>`)}
+                        </select>
+                        <div class="sets-container"></div>
+                        <button class="remove-btn" type="button">Remove</button>
+                    `;
+
+                    const setsSelect = exerciseDiv.querySelector('.sets-select');
+                    setsSelect.addEventListener('change', function() {
+                        updateSets(this);
+                    });
+                }
+
+                const removeBtn = exerciseDiv.querySelector('.remove-btn');
+                removeBtn.addEventListener('click', function() {
+                    exerciseDiv.remove();
+                });
+
+                container.appendChild(exerciseDiv);
+            });
+        }
+
+        function updateSets(selectElement) {
+            const setsContainer = selectElement.parentElement.querySelector('.sets-container');
+            const numSets = parseInt(selectElement.value);
+            setsContainer.innerHTML = '';
+
+            for (let i = 0; i < numSets; i++) {
+                const setDiv = document.createElement('div');
+                setDiv.className = 'set-entry';
+                setDiv.innerHTML = `
+                    Set ${i+1}:
+                    <select class="reps">
+                        <option value="">Select Reps</option>
+                        ${Array.from({length: 31}, (_, i) => `<option value="${i}">${i} reps</option>`)}
+                    </select>
+                    <input type="number" class="weight" placeholder="Weight" min="0">
+                    <select class="weight-unit">
+                        <option value="lbs">lbs</option>
+                        <option value="kg">kg</option>
+                    </select>
+                `;
+                setsContainer.appendChild(setDiv);
+            }
+        }
+
+        function saveWorkout() {
+            const date = document.getElementById('workout-date').value;
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+
+            const workoutType = document.getElementById('workout-type').value;
+            if (!workoutType) {
+                alert('Please select a workout type');
+                return;
+            }
+
+            const workout = {
+                date: date,
+                type: workoutType,
+                exercises: []
+            };
+
+            const isCardioOrFlex = workoutType === 'cardio' || workoutType === 'flexibility';
+
+            document.querySelectorAll('.exercise-row').forEach(row => {
+                const exerciseName = row.querySelector('div').textContent;
+                
+                if (isCardioOrFlex) {
+                    const timeInput = row.querySelector('input').value;
+                    const timeUnit = row.querySelector('select').value;
+                    workout.exercises.push({
+                        name: exerciseName,
+                        duration: timeInput,
+                        unit: timeUnit
+                    });
+                } else {
+                    const sets = [];
+                    row.querySelectorAll('.set-entry').forEach(setDiv => {
+                        sets.push({
+                            reps: setDiv.querySelector('.reps').value,
+                            weight: setDiv.querySelector('.weight').value,
+                            unit: setDiv.querySelector('.weight-unit').value
+                        });
+                    });
+                    workout.exercises.push({
+                        name: exerciseName,
+                        sets: sets
+                    });
+                }
+            });
+
+            let workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+            workouts.push(workout);
+            localStorage.setItem('workouts', JSON.stringify(workouts));
+
+            displayWorkoutHistory(workoutType);
+            clearForm();
+            alert('Workout saved!');
+        }
+
+        function displayWorkoutHistory(selectedType) {
+            const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+            const historyDiv = document.getElementById('workout-history');
+            
+            // Filter workouts by selected type and get latest 3
+            const filteredWorkouts = workouts
+                .filter(workout => workout.type === selectedType)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 3);
+
+            historyDiv.innerHTML = filteredWorkouts.map(workout => {
+                const isCardioOrFlex = workout.type === 'cardio' || workout.type === 'flexibility';
+                return `
+                    <div class="history-workout">
+                        <h3>${workout.date}</h3>
+                        ${workout.exercises.map(exercise => {
+                            if (isCardioOrFlex) {
+                                return `
+                                    <div>
+                                        <strong>${exercise.name}</strong>: ${exercise.duration} ${exercise.unit}
+                                    </div>
+                                `;
+                            } else {
+                                return `
+                                    <div>
+                                        <strong>${exercise.name}</strong>
+                                        ${exercise.sets.map((set, i) => `
+                                            <div>Set ${i+1}: ${set.reps} reps @ ${set.weight} ${set.unit}</div>
+                                        `).join('')}
+                                    </div>
+                                `;
+                            }
+                        }).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function clearForm() {
+            document.getElementById('workout-type').value = '';
+            document.getElementById('exercises-container').innerHTML = '';
+            document.getElementById('workout-date').valueAsDate = new Date();
+        }
+    </script>
+</body>
+</html>
