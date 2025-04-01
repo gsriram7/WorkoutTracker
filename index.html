@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Workout Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -128,11 +131,101 @@
         }
 
         .history-workout {
-            background-color: #f8f9fa;
+            margin-bottom: 20px;
             padding: 15px;
-            margin: 10px 0;
-            border-radius: var(--border-radius);
-            border-left: 4px solid var(--secondary-color);
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .history-workout h3 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+
+        .history-workout p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .weekly-workout {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .weekly-workout p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .weekly-workout strong {
+            color: #2c3e50;
+        }
+
+        #weekly-report h4 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #3498db;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .copy-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: #219a52;
+        }
+
+        .weekly-workout {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .weekly-workout p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .report-footer {
+            margin-top: 20px;
+            text-align: center;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        #weekly-report h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .weekly-workout strong {
+            color: var(--secondary-color);
+            font-size: 1.1em;
+        }
+
+        #weekly-report h4 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #3498db;
         }
 
         .remove-btn {
@@ -156,6 +249,66 @@
             flex-direction: column;
             gap: 10px;
             width: 100%;
+        }
+
+        .report-btn {
+            background-color: #27ae60;
+            margin-top: 20px;
+        }
+
+        .report-btn:hover {
+            background-color: #2ecc71;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: var(--border-radius);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .graph-container {
+            background-color: var(--card-background);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .exercise-graph {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
         }
 
         @media (min-width: 768px) {
@@ -204,7 +357,7 @@
                     <option value="chest_triceps">Chest and Triceps</option>
                     <option value="legs">Legs</option>
                     <option value="back_biceps">Back and Biceps</option>
-                    <option value="abs_back">Abs and Lower Back</option> 
+                    <option value="abs_back">Abs and Lower Back</option>
                     <option value="cardio">Cardio</option>
                     <option value="flexibility">Flexibility</option>
                 </select>
@@ -218,6 +371,21 @@
             <h2>Recent History</h2>
             <div id="workout-history"></div>
         </div>
+
+        <div class="graph-container" id="graph-container" style="display: none;">
+            <h2>Exercise Trends</h2>
+            <div id="exercise-graphs"></div>
+        </div>
+
+        <button id="weekly-report-btn" class="report-btn">Weekly Report</button>
+
+        <div id="report-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="weekly-report"></div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -239,6 +407,17 @@
             });
 
             document.getElementById('save-workout-btn').addEventListener('click', saveWorkout);
+            document.getElementById('weekly-report-btn').addEventListener('click', generateWeeklyReport);
+
+            document.querySelector('.close').addEventListener('click', function() {
+                document.getElementById('report-modal').style.display = 'none';
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target == document.getElementById('report-modal')) {
+                    document.getElementById('report-modal').style.display = 'none';
+                }
+            });
         });
 
         function getLastWorkout(workoutType) {
@@ -294,7 +473,6 @@
                         updateSets(this, lastExercise ? lastExercise.sets : null);
                     });
 
-                    // Immediately populate sets if we have previous data
                     if (lastExercise) {
                         updateSets(setsSelect, lastExercise.sets);
                     }
@@ -395,7 +573,6 @@
             const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
             const historyDiv = document.getElementById('workout-history');
             
-            // Filter workouts by selected type and get latest 3
             const filteredWorkouts = workouts
                 .filter(workout => workout.type === selectedType)
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -405,28 +582,22 @@
                 const isCardioOrFlex = workout.type === 'cardio' || workout.type === 'flexibility';
                 return `
                     <div class="history-workout">
-                        <h3>${workout.date}</h3>
+                        <h3>${workout.date} - ${workout.type.replace('_', ' ').toUpperCase()}</h3>
                         ${workout.exercises.map(exercise => {
                             if (isCardioOrFlex) {
-                                return `
-                                    <div>
-                                        <strong>${exercise.name}</strong>: ${exercise.duration} ${exercise.unit}
-                                    </div>
-                                `;
+                                return `<p>${exercise.name}: ${exercise.duration} ${exercise.unit}</p>`;
                             } else {
-                                return `
-                                    <div>
-                                        <strong>${exercise.name}</strong>
-                                        ${exercise.sets.map((set, i) => `
-                                            <div>Set ${i+1}: ${set.reps} reps @ ${set.weight} ${set.unit}</div>
-                                        `).join('')}
-                                    </div>
-                                `;
+                                const setsSummary = exercise.sets.map(set => 
+                                    `${set.reps}×${set.weight}${set.unit}`
+                                ).join(', ');
+                                return `<p>${exercise.name}: ${setsSummary}</p>`;
                             }
                         }).join('')}
                     </div>
                 `;
             }).join('');
+
+            generateExerciseGraphs(selectedType);
         }
 
         function clearForm() {
@@ -434,6 +605,226 @@
             document.getElementById('exercises-container').innerHTML = '';
             document.getElementById('workout-date').valueAsDate = new Date();
         }
+
+        function generateWeeklyReport() {
+            const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+            const today = new Date();
+            const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+            startOfWeek.setHours(0, 0, 0, 0);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+            // Format dates for display
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric'
+                });
+            };
+
+            const formatDay = (date) => {
+                return date.toLocaleDateString('en-US', { 
+                    weekday: 'short'
+                });
+            };
+
+            const thisWeeksWorkouts = workouts.filter(workout => new Date(workout.date) >= startOfWeek);
+
+            let report = `
+                <h3>Weekly Summary (${formatDate(startOfWeek)} - ${formatDate(endOfWeek)})</h3>
+            `;
+
+            if (thisWeeksWorkouts.length === 0) {
+                report += '<p>No workouts recorded this week.</p>';
+            } else {
+                const workoutsByType = {};
+                thisWeeksWorkouts.forEach(workout => {
+                    if (!workoutsByType[workout.type]) {
+                        workoutsByType[workout.type] = [];
+                    }
+                    workoutsByType[workout.type].push(workout);
+                });
+
+                for (const [type, typeWorkouts] of Object.entries(workoutsByType)) {
+                    report += `<h4>${type.replace('_', ' ').toUpperCase()} (${typeWorkouts.length} session${typeWorkouts.length > 1 ? 's' : ''})</h4>`;
+                    typeWorkouts.forEach(workout => {
+                        const workoutDate = new Date(workout.date);
+                        report += `<div class="weekly-workout">
+                            <p><strong>${formatDay(workoutDate)}</strong></p>
+                            ${workout.exercises.map(exercise => {
+                                const isCardioOrFlex = type === 'cardio' || type === 'flexibility';
+                                if (isCardioOrFlex) {
+                                    return `<p>${exercise.name}: ${exercise.duration} ${exercise.unit}</p>`;
+                                } else {
+                                    const setsSummary = exercise.sets.map(set => 
+                                        `${set.reps}×${set.weight}${set.unit}`
+                                    ).join(', ');
+                                    return `<p>${exercise.name}: ${setsSummary}</p>`;
+                                }
+                            }).join('')}
+                        </div>`;
+                    });
+                }
+            }
+
+            report += `
+                <div class="report-footer">
+                    <button onclick="copyToClipboard()" class="copy-btn">Copy to Clipboard</button>
+                </div>
+            `;
+
+            document.getElementById('weekly-report').innerHTML = report;
+            document.getElementById('report-modal').style.display = 'block';
+        }
+
+        // Add this function to handle copying to clipboard
+        function copyToClipboard() {
+            const reportEl = document.getElementById('weekly-report');
+            
+            // Create a plain text version of the report
+            let textContent = '';
+            
+            // Get the date range
+            const dateRange = reportEl.querySelector('h3').textContent;
+            textContent += dateRange + '\n\n';
+
+            // Get all workout sections
+            reportEl.querySelectorAll('h4').forEach(typeHeader => {
+                textContent += typeHeader.textContent + '\n';
+                const nextElement = typeHeader.nextElementSibling;
+                let currentElement = nextElement;
+                
+                while (currentElement && !currentElement.matches('h4')) {
+                    if (currentElement.classList.contains('weekly-workout')) {
+                        currentElement.querySelectorAll('p').forEach(p => {
+                            textContent += p.textContent + '\n';
+                        });
+                        textContent += '\n';
+                    }
+                    currentElement = currentElement.nextElementSibling;
+                }
+            });
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(textContent).then(() => {
+                const copyBtn = document.querySelector('.copy-btn');
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy to Clipboard';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        function generateExerciseGraphs(workoutType) {
+            const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+            const filteredWorkouts = workouts.filter(workout => workout.type === workoutType);
+            const isCardioOrFlex = workoutType === 'cardio' || workoutType === 'flexibility';
+            
+            // Initialize data structure for all exercises of this type
+            const exerciseData = {};
+            workoutExercises[workoutType].forEach(exercise => {
+                exerciseData[exercise] = [];
+            });
+
+            // Populate data from workouts
+            filteredWorkouts.forEach(workout => {
+                workout.exercises.forEach(exercise => {
+                    if (isCardioOrFlex) {
+                        if (exercise.duration) {
+                            exerciseData[exercise.name].push({
+                                x: new Date(workout.date),
+                                y: parseFloat(exercise.duration)
+                            });
+                        }
+                    } else {
+                        if (exercise.sets && exercise.sets.length > 0) {
+                            const volume = exercise.sets.reduce((total, set) => {
+                                const reps = parseInt(set.reps) || 0;
+                                const weight = parseFloat(set.weight) || 0;
+                                return total + (reps * weight);
+                            }, 0);
+                            exerciseData[exercise.name].push({
+                                x: new Date(workout.date),
+                                y: volume
+                            });
+                        }
+                    }
+                });
+            });
+
+            const graphsContainer = document.getElementById('exercise-graphs');
+            graphsContainer.innerHTML = '';
+
+            // Create a grid container for graphs
+            const gridContainer = document.createElement('div');
+            gridContainer.style.display = 'grid';
+            gridContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))';
+            gridContainer.style.gap = '20px';
+            graphsContainer.appendChild(gridContainer);
+
+            // Create graphs for all exercises
+            Object.keys(exerciseData).forEach(exerciseName => {
+                const graphDiv = document.createElement('div');
+                graphDiv.style.padding = '10px';
+                graphDiv.style.backgroundColor = '#fff';
+                graphDiv.style.borderRadius = '8px';
+                graphDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+
+                const canvas = document.createElement('canvas');
+                canvas.id = `graph-${exerciseName.replace(/\s+/g, '-')}`;
+                graphDiv.appendChild(canvas);
+                gridContainer.appendChild(graphDiv);
+
+                const ctx = canvas.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: exerciseName,
+                            data: exerciseData[exerciseName].sort((a, b) => a.x - b.x),
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: exerciseName
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: isCardioOrFlex ? 'Duration (minutes)' : 'Volume (weight × reps)'
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+            document.getElementById('graph-container').style.display = 'block';
+        }
+
     </script>
 </body>
 </html>
