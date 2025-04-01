@@ -204,6 +204,7 @@
                     <option value="chest_triceps">Chest and Triceps</option>
                     <option value="legs">Legs</option>
                     <option value="back_biceps">Back and Biceps</option>
+                    <option value="abs_back">Abs and Lower Back</option> 
                     <option value="cardio">Cardio</option>
                     <option value="flexibility">Flexibility</option>
                 </select>
@@ -224,6 +225,7 @@
             chest_triceps: ['Pectoral Fly', 'Chest Press', 'Triceps Extension', 'Skull Crushers'],
             legs: ['Leg Press', 'Lunges', 'Leg Curls', 'Calf Raise', 'Deadlift'],
             back_biceps: ['Lat Pull Down', 'Cable Row', 'Pull Ups', 'Preacher Curl', 'Hammer Curl'],
+            abs_back: ['Ab Crunch', 'Hanging Leg Raise', 'Deadlift'],
             cardio: ['Running', 'Swimming', 'Dancing', 'Cycling'],
             flexibility: ['Stretching', 'Yoga']
         };
@@ -239,6 +241,13 @@
             document.getElementById('save-workout-btn').addEventListener('click', saveWorkout);
         });
 
+        function getLastWorkout(workoutType) {
+            const workouts = JSON.parse(localStorage.getItem('workouts') || '[]');
+            return workouts
+                .filter(workout => workout.type === workoutType)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+        }
+
         function displayExercises() {
             const workoutType = document.getElementById('workout-type').value;
             const container = document.getElementById('exercises-container');
@@ -248,30 +257,33 @@
 
             const exercises = workoutExercises[workoutType];
             const isCardioOrFlex = workoutType === 'cardio' || workoutType === 'flexibility';
+            const lastWorkout = getLastWorkout(workoutType);
 
             exercises.forEach(exercise => {
                 const exerciseDiv = document.createElement('div');
                 exerciseDiv.className = 'exercise-row';
 
                 if (isCardioOrFlex) {
+                    const lastExercise = lastWorkout ? lastWorkout.exercises.find(e => e.name === exercise) : null;
                     exerciseDiv.innerHTML = `
                         <div>${exercise}</div>
                         <div></div>
                         <div class="time-entry">
-                            <input type="number" min="1" placeholder="Duration" style="width: 100%">
+                            <input type="number" min="1" placeholder="Duration" style="width: 100%" value="${lastExercise ? lastExercise.duration : ''}">
                             <select>
-                                <option value="minutes">Minutes</option>
-                                <option value="hours">Hours</option>
+                                <option value="minutes" ${lastExercise && lastExercise.unit === 'minutes' ? 'selected' : ''}>Minutes</option>
+                                <option value="hours" ${lastExercise && lastExercise.unit === 'hours' ? 'selected' : ''}>Hours</option>
                             </select>
                         </div>
                         <button class="remove-btn" type="button">Remove</button>
                     `;
                 } else {
+                    const lastExercise = lastWorkout ? lastWorkout.exercises.find(e => e.name === exercise) : null;
                     exerciseDiv.innerHTML = `
                         <div>${exercise}</div>
                         <select class="sets-select">
                             <option value="">Select Sets</option>
-                            ${Array.from({length: 10}, (_, i) => `<option value="${i+1}">${i+1} sets</option>`)}
+                            ${Array.from({length: 10}, (_, i) => `<option value="${i+1}" ${lastExercise && lastExercise.sets.length === i+1 ? 'selected' : ''}>${i+1} sets</option>`)}
                         </select>
                         <div class="sets-container"></div>
                         <button class="remove-btn" type="button">Remove</button>
@@ -279,8 +291,13 @@
 
                     const setsSelect = exerciseDiv.querySelector('.sets-select');
                     setsSelect.addEventListener('change', function() {
-                        updateSets(this);
+                        updateSets(this, lastExercise ? lastExercise.sets : null);
                     });
+
+                    // Immediately populate sets if we have previous data
+                    if (lastExercise) {
+                        updateSets(setsSelect, lastExercise.sets);
+                    }
                 }
 
                 const removeBtn = exerciseDiv.querySelector('.remove-btn');
@@ -292,7 +309,7 @@
             });
         }
 
-        function updateSets(selectElement) {
+        function updateSets(selectElement, previousSets = null) {
             const setsContainer = selectElement.parentElement.querySelector('.sets-container');
             const numSets = parseInt(selectElement.value);
             setsContainer.innerHTML = '';
@@ -300,16 +317,17 @@
             for (let i = 0; i < numSets; i++) {
                 const setDiv = document.createElement('div');
                 setDiv.className = 'set-entry';
+                const previousSet = previousSets && previousSets[i] ? previousSets[i] : null;
                 setDiv.innerHTML = `
                     Set ${i+1}:
                     <select class="reps">
                         <option value="">Select Reps</option>
-                        ${Array.from({length: 31}, (_, i) => `<option value="${i}">${i} reps</option>`)}
+                        ${Array.from({length: 31}, (_, j) => `<option value="${j}" ${previousSet && previousSet.reps == j ? 'selected' : ''}>${j} reps</option>`)}
                     </select>
-                    <input type="number" class="weight" placeholder="Weight" min="0">
+                    <input type="number" class="weight" placeholder="Weight" min="0" value="${previousSet ? previousSet.weight : ''}">
                     <select class="weight-unit">
-                        <option value="lbs">lbs</option>
-                        <option value="kg">kg</option>
+                        <option value="lbs" ${previousSet && previousSet.unit === 'lbs' ? 'selected' : ''}>lbs</option>
+                        <option value="kg" ${previousSet && previousSet.unit === 'kg' ? 'selected' : ''}>kg</option>
                     </select>
                 `;
                 setsContainer.appendChild(setDiv);
